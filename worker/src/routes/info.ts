@@ -33,11 +33,11 @@ export async function handleInfo(request: Request, env?: Env): Promise<Response>
       return error('This video is private or unavailable', 403, cors);
     }
     if (msg.includes('No suitable video stream')) {
-      return error('No 1080p stream available for this video', 422, cors);
+      return error('No suitable video stream available for this video', 422, cors);
     }
 
     console.error('[yt-cut] getStreamInfo failed:', msg);
-    return error('Failed to fetch video info. The video may be region-locked or unavailable.', 502, cors);
+    return error(`Failed to fetch video info: ${msg}`, 502, cors);
   }
 
   // Enforce duration cap

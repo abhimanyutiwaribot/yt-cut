@@ -1,0 +1,153 @@
+---
+import '../styles/global.css';
+import Cutter from '../components/Cutter';
+
+const title = "YT-CUT — Trim & Cut YouTube Videos in Highest Quality";
+const description = "Free online YouTube video trimmer. Paste any link, drag to trim timestamps, and download lossless 1080p clips directly in your browser without sign-up.";
+const siteUrl = "https://yt-cut.com";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={siteUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+
+    {/* Open Graph / Facebook */}
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={siteUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+
+    {/* Twitter */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={siteUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    {/* FAQ Structured Data for Google Search SEO */}
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I trim a YouTube video with YT-CUT?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Paste any YouTube video URL into the input field, drag the start and end handles on the visual timeline to pick your desired clip, and click Trim & Download."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there any quality loss during trimming?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. When using the default WebM format, YT-CUT uses stream copy (-c copy) directly from YouTube's native 1080p VP9 and Opus streams with zero re-encoding and zero quality degradation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need to register or create an account?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No account, signup, or login is required. The tool operates directly in your browser."
+          }
+        }
+      ]
+    })} />
+  </head>
+  <body class="bg-[#090a0f] text-[#f8fafc] flex flex-col min-h-screen">
+    {/* Minimal Header */}
+    <header className="border-b border-[#191e2b] py-4 px-6">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <a href="/" class="text-xl font-extrabold tracking-tight text-white flex items-center gap-1.5">
+          <span>YT</span><span class="text-[#3b82f6]">-CUT</span>
+        </a>
+        <div class="text-xs text-[#94a3b8] font-medium hidden sm:block">
+          Zero Sign-up · In-Browser 1080p Lossless
+        </div>
+      </div>
+    </header>
+
+    {/* Main Content Area */}
+    <main class="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-10 md:py-16">
+      {/* Hero Headline */}
+      <div class="text-center max-w-xl mx-auto mb-10">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-[#f8fafc] tracking-tight leading-tight">
+          Trim YouTube videos in highest quality
+        </h1>
+        <p class="text-sm sm:text-base text-[#94a3b8] mt-3">
+          Paste a link, drag to pick timestamps, and download your excerpt instantly. No accounts, no watermarks, no server queues.
+        </p>
+      </div>
+
+      {/* Interactive Tool Component */}
+      <Cutter client:load />
+
+      {/* Structured How It Works Section */}
+      <section class="mt-16 pt-12 border-t border-[#191e2b] max-w-2xl mx-auto">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-6 text-center">
+          How It Works
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+          <div class="bg-[#12151e] border border-[#23293a] rounded-xl p-4">
+            <div class="font-mono text-xs text-[#3b82f6] font-bold mb-1.5">01</div>
+            <div class="font-semibold text-[#f8fafc] mb-1">Paste Link</div>
+            <div class="text-xs text-[#94a3b8]">Paste any standard or shortened YouTube URL to load metadata.</div>
+          </div>
+          <div class="bg-[#12151e] border border-[#23293a] rounded-xl p-4">
+            <div class="font-mono text-xs text-[#3b82f6] font-bold mb-1.5">02</div>
+            <div class="font-semibold text-[#f8fafc] mb-1">Select Range</div>
+            <div class="text-xs text-[#94a3b8]">Drag the interactive handles to isolate the exact clip window.</div>
+          </div>
+          <div class="bg-[#12151e] border border-[#23293a] rounded-xl p-4">
+            <div class="font-mono text-xs text-[#3b82f6] font-bold mb-1.5">03</div>
+            <div class="font-semibold text-[#f8fafc] mb-1">Instant Save</div>
+            <div class="text-xs text-[#94a3b8]">Your browser trims the stream lossless at up to 1080p resolution.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO FAQ Section */}
+      <section class="mt-16 pt-12 border-t border-[#191e2b] max-w-2xl mx-auto space-y-4">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-[#94a3b8] mb-6 text-center">
+          Frequently Asked Questions
+        </h2>
+        
+        <div class="bg-[#12151e] border border-[#23293a] rounded-xl p-5 space-y-2">
+          <h3 class="text-sm font-semibold text-[#f8fafc]">Why is the default format WebM?</h3>
+          <p class="text-xs text-[#94a3b8] leading-relaxed">
+            YouTube stores all modern HD streams in VP9 and Opus codecs. Delivering WebM allows YT-CUT to use direct stream copy with zero re-encoding, meaning zero compression artifacts and near-instant processing.
+          </p>
+        </div>
+
+        <div class="bg-[#12151e] border border-[#23293a] rounded-xl p-5 space-y-2">
+          <h3 class="text-sm font-semibold text-[#f8fafc]">What is the maximum clip length?</h3>
+          <p class="text-xs text-[#94a3b8] leading-relaxed">
+            You can trim clips up to 10 minutes in duration. This boundary protects device memory while handling 99% of excerpt and citation use cases.
+          </p>
+        </div>
+
+        <div class="bg-[#12151e] border border-[#23293a] rounded-xl p-5 space-y-2">
+          <h3 class="text-sm font-semibold text-[#f8fafc]">Are videos stored on your servers?</h3>
+          <p class="text-xs text-[#94a3b8] leading-relaxed">
+            No video files ever touch our servers. Video data flows directly from YouTube's CDN into your local browser WebAssembly runtime.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    {/* Minimalist Footer */}
+    <footer class="border-t border-[#191e2b] py-8 px-6 text-center text-xs text-[#64748b]">
+      <div class="max-w-4xl mx-auto space-y-2">
+        <p>YT-CUT is an independent tool not affiliated with or endorsed by YouTube or Google LLC.</p>
+        <p>Users are responsible for compliance with YouTube's Terms of Service and applicable copyright laws.</p>
+      </div>
+    </footer>
+  </body>
+</html>

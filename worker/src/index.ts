@@ -4,6 +4,7 @@
 // Video bytes NEVER pass through this worker.
 
 import { handleInfo } from './routes/info';
+import { handleProxy } from './routes/proxy';
 import { handleOptions } from './lib/cors';
 import { error } from './lib/response';
 import { isRateLimited, getClientIp } from './lib/ratelimit';
@@ -23,12 +24,20 @@ export default {
     }
 
     // ── Rate limiting ───────────────────────────────────────────────
+    // Limit /api/info and general routes to 10 req/min.
+    // Allow up to 600 req/min for /api/proxy to support chunked media streaming.
     const ip = getClientIp(request);
-    if (isRateLimited(ip)) {
+    const maxRequests = pathname === '/api/proxy' ? 600 : 10;
+    if (isRateLimited(ip, maxRequests)) {
       return error('Too many requests. Please wait a moment.', 429);
     }
 
     // ── Route table ─────────────────────────────────────────────────
+    // GET /api/proxy?url=<googlevideo_url> → CORS stream passthrough
+    if (pathname === '/api/proxy') {
+      return handleProxy(request);
+    }
+
     // GET /api/info?url=<youtube_url>   → stream URLs + metadata
     if (pathname === '/api/info') {
       return handleInfo(request, env);
