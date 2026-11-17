@@ -23,7 +23,7 @@ export default function Cutter() {
   const [endTime, setEndTime] = useState(30);
   const [format, setFormat] = useState<FormatOption>('best');
   const [isPlayingClip, setIsPlayingClip] = useState(false);
-  const [draggingHandle, setDraggingHandle] = useState<'start' | 'end' | null>(null);
+  const [draggingHandle, setDraggingHandle] = useState<'start' | 'end' | 'range' | null>(null);
 
   // Processing state
   const [processing, setProcessing] = useState(false);
@@ -33,7 +33,9 @@ export default function Cutter() {
   // Refs
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const activeHandleRef = useRef<'start' | 'end' | null>(null);
+  const activeHandleRef = useRef<'start' | 'end' | 'range' | null>(null);
+  const justDraggedRef = useRef<boolean>(false);
+  const dragStartOffsetRef = useRef<{ clientX: number; initStart: number; initEnd: number } | null>(null);
   const playheadTimerRef = useRef<number | null>(null);
   const startTimeRef = useRef(startTime);
   const endTimeRef = useRef(endTime);
@@ -125,50 +127,112 @@ export default function Cutter() {
     }
   };
 
-  // Timeline dragging logic
-  const handlePointerDown = (handle: 'start' | 'end') => (e: React.PointerEvent) => {
+  // Fluid Window-level pointer dragging logic
+  const startDragging = (handle: 'start' | 'end' | 'range') => (e: React.PointerEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    if (!videoData || !trackRef.current) return;
+
     activeHandleRef.current = handle;
+    justDraggedRef.current = true;
     setDraggingHandle(handle);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!activeHandleRef.current || !trackRef.current || !videoData) return;
+    dragStartOffsetRef.current = {
+      clientX: e.clientX,
+      initStart: startTimeRef.current,
+      initEnd: endTimeRef.current,
+    };
 
-    const rect = trackRef.current.getBoundingClientRect();
-    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const targetSeconds = pos * videoData.durationSeconds;
     const maxClip = videoData.maxClipDurationSeconds || 600;
 
-    if (activeHandleRef.current === 'start') {
-      const newStart = Math.min(targetSeconds, endTime - 0.5);
-      const boundedStart = endTime - newStart <= maxClip ? newStart : endTime - maxClip;
-      const cleanStart = Math.max(0, Math.round(boundedStart * 10) / 10);
-      setStartTime(cleanStart);
-    } else if (activeHandleRef.current === 'end') {
-      const newEnd = Math.max(targetSeconds, startTime + 0.5);
-      const boundedEnd = newEnd - startTime <= maxClip ? newEnd : startTime + maxClip;
-      const cleanEnd = Math.min(videoData.durationSeconds, Math.round(boundedEnd * 10) / 10);
-      setEndTime(cleanEnd);
-    }
-  }, [endTime, startTime, videoData]);
+    const onPointerMove = (ev: PointerEvent) => {
+      if (!trackRef.current || !videoData || !activeHandleRef.current || !dragStartOffsetRef.current) return;
+      const currentRect = trackRef.current.getBoundingClientRect();
+      const deltaX = ev.clientX - dragStartOffsetRef.current.clientX;
+      const deltaSec = (deltaX / currentRect.width) * videoData.durationSeconds;
+      const maxClip = videoData.maxClipDurationSeconds || 600;
 
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (activeHandleRef.current) {
-      const handle = activeHandleRef.current;
+      if (activeHandleRef.current === 'start') {
+        const curEnd = dragStartOffsetRef.current.initEnd;
+        let candidateStart = dragStartOffsetRef.current.initStart + deltaSec;
+        candidateStart = Math.max(0, Math.min(candidateStart, curEnd - 0.5));
+        if (curEnd - candidateStart > maxClip) {
+          candidateStart = curEnd - maxClip;
+        }
+        setStartTime(Math.round(candidateStart * 10) / 10);
+      } else if (activeHandleRef.current === 'end') {
+        const curStart = dragStartOffsetRef.current.initStart;
+        let candidateEnd = dragStartOffsetRef.current.initEnd + deltaSec;
+        candidateEnd = Math.min(videoData.durationSeconds, Math.max(candidateEnd, curStart + 0.5));
+        if (candidateEnd - curStart > maxClip) {
+          candidateEnd = curStart + maxClip;
+        }
+        setEndTime(Math.round(candidateEnd * 10) / 10);
+      } else if (activeHandleRef.current === 'range') {
+        const clipLen = dragStartOffsetRef.current.initEnd - dragStartOffsetRef.current.initStart;
+        let candidateStart = dragStartOffsetRef.current.initStart + deltaSec;
+
+        if (candidateStart < 0) {
+          candidateStart = 0;
+        } else if (candidateStart + clipLen > videoData.durationSeconds) {
+          candidateStart = videoData.durationSeconds - clipLen;
+        }
+
+        const cleanStart = Math.max(0, Math.round(candidateStart * 10) / 10);
+        const cleanEnd = Math.min(videoData.durationSeconds, Math.round((cleanStart + clipLen) * 10) / 10);
+
+        setStartTime(cleanStart);
+        setEndTime(cleanEnd);
+      }
+    };
+
+    const onPointerUp = () => {
+      const active = activeHandleRef.current;
       activeHandleRef.current = null;
       setDraggingHandle(null);
+      dragStartOffsetRef.current = null;
 
-      if (handle === 'start') {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+
+      if (active === 'start' || active === 'range') {
         seekPlayer(startTimeRef.current);
-      } else {
+      } else if (active === 'end') {
         seekPlayer(endTimeRef.current);
       }
 
-      try {
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {}
+      // Suppress trailing click event from modifying handles
+      setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 150);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (justDraggedRef.current || activeHandleRef.current || !trackRef.current || !videoData) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const targetSec = Math.round(pos * videoData.durationSeconds * 10) / 10;
+
+    const distToStart = Math.abs(targetSec - startTime);
+    const distToEnd = Math.abs(targetSec - endTime);
+    const maxClip = videoData.maxClipDurationSeconds || 600;
+
+    if (distToStart <= distToEnd) {
+      const clean = Math.min(targetSec, endTime - 0.5);
+      const bounded = endTime - clean <= maxClip ? clean : endTime - maxClip;
+      const finalStart = Math.max(0, Math.round(bounded * 10) / 10);
+      setStartTime(finalStart);
+      seekPlayer(finalStart);
+    } else {
+      const clean = Math.max(targetSec, startTime + 0.5);
+      const bounded = clean - startTime <= maxClip ? clean : startTime + maxClip;
+      const finalEnd = Math.min(videoData.durationSeconds, Math.round(bounded * 10) / 10);
+      setEndTime(finalEnd);
+      seekPlayer(finalEnd);
     }
   };
 
@@ -357,9 +421,8 @@ export default function Cutter() {
                 startTime={startTime}
                 endTime={endTime}
                 draggingHandle={draggingHandle}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
+                onStartDrag={startDragging}
+                onTrackClick={handleTrackClick}
               />
 
               <TimeControls
