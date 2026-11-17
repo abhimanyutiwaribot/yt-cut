@@ -261,6 +261,15 @@ describe('GET /api/info — upstream errors', () => {
 // ── Security Hardening Checks ────────────────────────────────────────────────
 
 describe('Security hardening checks', () => {
+  it('allows Cloudflare Pages origin in CORS', async () => {
+    const req = makeRequest('/api/info?url=https://youtube.com/watch?v=dQw4w9WgXcQ', 'GET', 'https://yt-cut.pages.dev');
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(req, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://yt-cut.pages.dev');
+  });
+
   it('does not reflect untrusted origins in CORS', async () => {
     const req = makeRequest('/api/info?url=https://youtube.com/watch?v=dQw4w9WgXcQ', 'GET', 'https://malicious-site.com');
     const ctx = createExecutionContext();

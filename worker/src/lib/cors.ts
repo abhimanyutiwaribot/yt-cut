@@ -7,14 +7,17 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',  // Vite dev server
   'http://127.0.0.1:5173',
   'http://localhost:3000',
+  'https://yt-cut.pages.dev', // Cloudflare Pages
   'https://yt-cut.com',     // production
   'https://www.yt-cut.com',
 ];
 
 export function getCorsHeaders(request: Request): HeadersInit {
-  const origin = request.headers.get('Origin') ?? '';
+  const rawOrigin = request.headers.get('Origin') ?? '';
+  const origin = rawOrigin.replace(/\/+$/, '');
   const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
-  const isAllowed = isLocalhost || ALLOWED_ORIGINS.includes(origin);
+  const isPagesDev = origin === 'https://yt-cut.pages.dev' || origin.endsWith('.yt-cut.pages.dev');
+  const isAllowed = isLocalhost || isPagesDev || ALLOWED_ORIGINS.includes(origin);
   const allowed = isAllowed ? origin : 'https://yt-cut.com';
 
   return {
