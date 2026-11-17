@@ -1,0 +1,51 @@
+---
+// src/components/Features.astro
+---
+
+<section class="mt-16 pt-10 border-t border-white/[0.08]">
+  <div class="text-[11px] font-mono uppercase tracking-widest text-zinc-500 mb-6 text-center">
+    Features
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+    <div class="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-4 hover:border-white/15 transition-colors">
+      <div class="text-xs font-semibold text-zinc-200 mb-1 flex items-center gap-2">
+        <span class="text-zinc-400 font-mono text-[11px]">01</span>
+        <span>Frame-Accurate Range Control</span>
+      </div>
+      <div class="text-xs text-zinc-400 leading-relaxed">
+        Interactive timeline with tactile knurled handles, millimeter tick marks, and ±1s precision nudge buttons for dialled-in cuts.
+      </div>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-4 hover:border-white/15 transition-colors">
+      <div class="text-xs font-semibold text-zinc-200 mb-1 flex items-center gap-2">
+        <span class="text-zinc-400 font-mono text-[11px]">02</span>
+        <span>Lossless Stream Copy</span>
+      </div>
+      <div class="text-xs text-zinc-400 leading-relaxed">
+        Trims directly in client WebAssembly (<code class="font-mono text-zinc-300 text-[11px]">-c copy</code>) without generational re-encoding artifacts or quality loss.
+      </div>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-4 hover:border-white/15 transition-colors">
+      <div class="text-xs font-semibold text-zinc-200 mb-1 flex items-center gap-2">
+        <span class="text-zinc-400 font-mono text-[11px]">03</span>
+        <span>Full Resolution (Up to 4K)</span>
+      </div>
+      <div class="text-xs text-zinc-400 leading-relaxed">
+        Export in 720p HD, 1080p FHD, or full native 4K (2160p) with original 128 kbps AAC stereo audio.
+      </div>
+    </div>
+
+    <div class="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-4 hover:border-white/15 transition-colors">
+      <div class="text-xs font-semibold text-zinc-200 mb-1 flex items-center gap-2">
+        <span class="text-zinc-400 font-mono text-[11px]">04</span>
+        <span>100% In-Browser Privacy</span>
+      </div>
+      <div class="text-xs text-zinc-400 leading-relaxed">
+        Video bytes never touch server storage or third-party buckets. Processing runs purely inside your browser memory.
+      </div>
+    </div>
+  </div>
+</section>
