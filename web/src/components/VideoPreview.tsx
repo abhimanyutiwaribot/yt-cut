@@ -18,7 +18,7 @@ export default function VideoPreview({
   onTogglePreview,
 }: VideoPreviewProps) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoData.videoId}?enablejsapi=1&origin=${encodeURIComponent(origin)}&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
+  const embedUrl = `https://www.youtube.com/embed/${videoData.videoId}?enablejsapi=1&origin=${encodeURIComponent(origin)}&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
 
   return (
     <div>
