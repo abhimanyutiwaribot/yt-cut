@@ -42,26 +42,34 @@ const siteUrl = "https://yt-cut.com";
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "How does YT—CUT trim YouTube clips in the browser?",
+          "name": "Do I need to create an account?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "YT—CUT fetches the exact stream chunks required for your clip range directly to your browser, where WebAssembly-powered FFmpeg executes a lossless stream copy (-c copy) to generate a clean MP4 file in memory."
+            "text": "No. There are no sign-ups, logins, or subscriptions. You can paste a link, trim your clip, and download it right away."
           }
         },
         {
           "@type": "Question",
-          "name": "Is there any generational quality loss?",
+          "name": "How long can my clips be?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. By utilizing direct stream copying rather than re-encoding, frames and audio samples are preserved bit-for-bit with original YouTube fidelity."
+            "text": "You can trim clips up to 10 minutes long from videos of any length, including multi-hour podcasts and livestreams."
           }
         },
         {
           "@type": "Question",
-          "name": "Are video files stored on your servers?",
+          "name": "Does trimming reduce video quality?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Zero bytes are stored. Video bytes flow ephemerally through an edge proxy and are processed strictly inside your device's browser memory."
+            "text": "No. Your clip is exported in the video's original resolution (up to 4K) without re-compression or blurring."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are my videos stored or uploaded anywhere?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Never. All trimming runs directly inside your web browser. Your video bytes are never saved on a server."
           }
         }
       ]
