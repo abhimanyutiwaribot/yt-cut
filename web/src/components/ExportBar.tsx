@@ -41,7 +41,7 @@ export default function ExportBar({
             />
           </div>
           <div className="text-[11px] text-zinc-500 font-mono text-center">
-            Executing in client WebAssembly · 0 bytes stored on server
+            Processing directly on your device · 0 bytes stored on server
           </div>
         </div>
       ) : (

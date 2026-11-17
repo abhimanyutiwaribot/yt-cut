@@ -230,7 +230,7 @@ export async function trimVideo(options: TrimOptions): Promise<{ blob: Blob; fil
   const videoBudget = computeBudget(getUrlClen(videoUrl) || (totalDur * 320 * 1024));
   const audioBudget = audioUrl ? computeBudget(getUrlClen(audioUrl) || (totalDur * 20 * 1024)) : undefined;
 
-  onProgress?.(5, 'Initializing WebAssembly engine...');
+  onProgress?.(5, 'Preparing clip engine...');
   const ffmpeg = await getFFmpeg();
 
   onProgress?.(10, 'Fetching video stream in chunks...');
