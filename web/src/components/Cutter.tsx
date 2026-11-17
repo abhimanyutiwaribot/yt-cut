@@ -47,7 +47,7 @@ export default function Cutter() {
     if (!iframeRef.current?.contentWindow) return;
     iframeRef.current.contentWindow.postMessage(
       JSON.stringify({ event: 'command', func, args }),
-      '*'
+      'https://www.youtube-nocookie.com'
     );
   }, []);
 

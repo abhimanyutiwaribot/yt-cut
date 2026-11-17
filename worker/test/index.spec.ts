@@ -257,3 +257,30 @@ describe('GET /api/info — upstream errors', () => {
     expect(body.error).toMatch(/stream/i);
   });
 });
+
+// ── Security Hardening Checks ────────────────────────────────────────────────
+
+describe('Security hardening checks', () => {
+  it('does not reflect untrusted origins in CORS', async () => {
+    const req = makeRequest('/api/info?url=https://youtube.com/watch?v=dQw4w9WgXcQ', 'GET', 'https://malicious-site.com');
+    const ctx = createExecutionContext();
+    const res = await worker.fetch(req, env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://yt-cut.com');
+  });
+
+  it('rejects proxy requests with non-HTTPS URLs', async () => {
+    const res = await fetchWorker('/api/proxy?url=http://rr1---sn-4g5ednks.googlevideo.com/videoplayback');
+    expect(res.status).toBe(400);
+    const body = await res.json<{ ok: boolean; error: string }>();
+    expect(body.error).toMatch(/https/i);
+  });
+
+  it('rejects proxy requests to unapproved stream hosts', async () => {
+    const res = await fetchWorker('/api/proxy?url=https://malicious-host.com/videoplayback');
+    expect(res.status).toBe(403);
+    const body = await res.json<{ ok: boolean; error: string }>();
+    expect(body.error).toMatch(/invalid stream host/i);
+  });
+});

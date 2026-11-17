@@ -5,7 +5,7 @@
 
 import { handleInfo } from './routes/info';
 import { handleProxy } from './routes/proxy';
-import { handleOptions } from './lib/cors';
+import { handleOptions, getCorsHeaders } from './lib/cors';
 import { error } from './lib/response';
 import { isRateLimited, getClientIp } from './lib/ratelimit';
 
@@ -18,9 +18,11 @@ export default {
       return handleOptions(request);
     }
 
+    const cors = getCorsHeaders(request);
+
     // ── Only GET requests beyond this point ────────────────────────
     if (request.method !== 'GET') {
-      return error('Method not allowed', 405);
+      return error('Method not allowed', 405, cors);
     }
 
     // ── Rate limiting ───────────────────────────────────────────────
@@ -29,7 +31,7 @@ export default {
     const ip = getClientIp(request);
     const maxRequests = pathname === '/api/proxy' ? 600 : 10;
     if (isRateLimited(ip, maxRequests)) {
-      return error('Too many requests. Please wait a moment.', 429);
+      return error('Too many requests. Please wait a moment.', 429, cors);
     }
 
     // ── Route table ─────────────────────────────────────────────────

@@ -14,7 +14,8 @@ const ALLOWED_ORIGINS = [
 export function getCorsHeaders(request: Request): HeadersInit {
   const origin = request.headers.get('Origin') ?? '';
   const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
-  const allowed = (isLocalhost || ALLOWED_ORIGINS.includes(origin)) ? origin : (origin || '*');
+  const isAllowed = isLocalhost || ALLOWED_ORIGINS.includes(origin);
+  const allowed = isAllowed ? origin : 'https://yt-cut.com';
 
   return {
     'Access-Control-Allow-Origin': allowed,

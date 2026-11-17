@@ -36,7 +36,10 @@ export default function SearchInput({
           value={url}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Paste YouTube link (video, stream, shorts)..."
-          className="w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none px-2 py-2 font-normal"
+          className="w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none px-2 py-2 font-normal appearance-none"
+          style={{ backgroundColor: 'transparent', colorScheme: 'dark' }}
+          autoComplete="off"
+          spellCheck={false}
           disabled={disabled || loading}
         />
 

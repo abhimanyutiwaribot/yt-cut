@@ -15,10 +15,13 @@ export async function handleProxy(request: Request): Promise<Response> {
     return error('Missing required query param: url', 400, cors);
   }
 
-  // Security check: ensure target is a Google / YouTube CDN host
+  // Security check: ensure target is an HTTPS Google / YouTube CDN host
   let parsed: URL;
   try {
     parsed = new URL(targetUrl);
+    if (parsed.protocol !== 'https:') {
+      return error('Only HTTPS stream URLs are supported', 400, cors);
+    }
     if (!parsed.hostname.endsWith('.googlevideo.com') && !parsed.hostname.endsWith('.youtube.com')) {
       return error('Invalid stream host', 403, cors);
     }
@@ -87,8 +90,12 @@ export async function handleProxy(request: Request): Promise<Response> {
   try {
     const upstreamRes = await fetch(upstreamUrl, {
       headers,
-      redirect: 'follow',
+      redirect: 'manual',
     });
+
+    if (upstreamRes.status >= 300 && upstreamRes.status < 400) {
+      return error('Upstream redirects are not permitted', 502, cors);
+    }
 
     if (upstreamRes.status >= 400) {
       const errText = await upstreamRes.clone().text().catch(() => '');
@@ -118,7 +125,7 @@ export async function handleProxy(request: Request): Promise<Response> {
       headers: responseHeaders,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Unknown upstream error';
-    return error(`Proxy streaming failed: ${msg}`, 502, cors);
+    console.error('[proxy exception]:', err);
+    return error('Proxy streaming failed. Please try again.', 502, cors);
   }
 }

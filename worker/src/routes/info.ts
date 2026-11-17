@@ -37,7 +37,7 @@ export async function handleInfo(request: Request, env?: Env): Promise<Response>
     }
 
     console.error('[yt-cut] getStreamInfo failed:', msg);
-    return error(`Failed to fetch video info: ${msg}`, 502, cors);
+    return error('Failed to fetch video information. Please verify the URL.', 502, cors);
   }
 
   // Enforce duration cap
