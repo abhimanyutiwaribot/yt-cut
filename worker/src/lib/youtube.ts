@@ -40,15 +40,29 @@ export interface StreamInfo {
 }
 
 export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
-  const yt = await Innertube.create({
+  // Use ClientType.IOS as primary because it provides direct un-ciphered URLs for regular videos
+  // as well as past live streams/broadcasts without requiring player JS execution.
+  let yt = await Innertube.create({
     fetch: fetch.bind(globalThis),
-    client_type: ClientType.VISIONOS,
+    client_type: ClientType.IOS,
     retrieve_player: false,
     generate_session_locally: false,
   });
 
-  const info = await yt.getBasicInfo(videoId);
-  const details = info.basic_info;
+  let info = await yt.getBasicInfo(videoId);
+  let details = info.basic_info;
+
+  // Fallback to VISIONOS if IOS returns no details or streaming data
+  if (!details || !info.streaming_data?.adaptive_formats?.length) {
+    yt = await Innertube.create({
+      fetch: fetch.bind(globalThis),
+      client_type: ClientType.VISIONOS,
+      retrieve_player: false,
+      generate_session_locally: false,
+    });
+    info = await yt.getBasicInfo(videoId);
+    details = info.basic_info;
+  }
 
   if (!details) throw new Error('Could not fetch video details');
 
@@ -64,7 +78,7 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
   // Prioritize H.264 (avc1 / mp4) because it supports direct HTTP Range streaming without
   // requiring Google SABR protocol (unlike AV01 on iOS).
   const adaptiveVideos = info.streaming_data?.adaptive_formats
-    ?.filter((f) => f.has_video && !f.has_audio && (f.height ?? 0) <= MAX_HEIGHT)
+    ?.filter((f) => f.has_video && !f.has_audio && (f.height ?? 0) <= MAX_HEIGHT && (f.url || (yt.session.player && f.cipher)))
     .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
 
   const bestVideo =
@@ -86,7 +100,7 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
   // ── Audio streams (DASH, audio-only) ──────────────────────────────
   // Prioritize AAC (mp4a) for native, lossless muxing with H.264 into MP4
   const audioStreams = info.streaming_data?.adaptive_formats
-    ?.filter((f) => f.has_audio && !f.has_video)
+    ?.filter((f) => f.has_audio && !f.has_video && (f.url || (yt.session.player && f.cipher)))
     .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
 
   console.log('[youtube debug] video adaptive formats:', adaptiveVideos?.map((f) => ({
