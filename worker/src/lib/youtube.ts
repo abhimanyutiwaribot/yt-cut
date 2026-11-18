@@ -56,6 +56,8 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
   let info: VideoInfoResult | null = null;
   let details: VideoInfoResult['basic_info'] | null = null;
 
+  const candidateLog: string[] = [];
+
   for (const clientType of clientCandidates) {
     try {
       const client = await Innertube.create({
@@ -66,7 +68,11 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
       });
 
       const res = await client.getBasicInfo(videoId);
-      if (res.playability_status?.status === 'LOGIN_REQUIRED') {
+      const status = res.playability_status?.status || 'UNKNOWN';
+      const reason = res.playability_status?.reason || '';
+      candidateLog.push(`${clientType}: status=${status}${reason ? ` (${reason})` : ''}`);
+
+      if (status === 'LOGIN_REQUIRED') {
         continue;
       }
 
@@ -79,13 +85,13 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
         details = res.basic_info;
         if (hasDirectUrl || res.basic_info.is_live || res.basic_info.is_upcoming) break;
       }
-    } catch {
-      // Try next candidate client
+    } catch (e: any) {
+      candidateLog.push(`${clientType}: error=${e.message || String(e)}`);
     }
   }
 
   if (!details || !info || !yt) {
-    throw new Error('Could not fetch video details or video is restricted');
+    throw new Error(`Video extraction failed: [${candidateLog.join(' | ')}]`);
   }
 
   const player = yt.session.player;
