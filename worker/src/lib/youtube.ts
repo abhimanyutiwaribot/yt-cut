@@ -73,11 +73,11 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
       const af = res.streaming_data?.adaptive_formats || [];
       const hasDirectUrl = af.some((f: any) => f.has_video && !!f.url);
 
-      if (res.basic_info && (hasDirectUrl || af.length > 0)) {
+      if (res.basic_info) {
         yt = client;
         info = res;
         details = res.basic_info;
-        if (hasDirectUrl) break; // Perfect match found!
+        if (hasDirectUrl || res.basic_info.is_live || res.basic_info.is_upcoming) break;
       }
     } catch {
       // Try next candidate client
