@@ -32,6 +32,9 @@ export async function handleInfo(request: Request, env?: Env): Promise<Response>
     if (msg.includes('private') || msg.includes('unavailable')) {
       return error('This video is private or unavailable', 403, cors);
     }
+    if (msg.includes('currently live') || msg.includes('not started yet')) {
+      return error(msg, 422, cors);
+    }
     if (msg.includes('No suitable video stream')) {
       return error('No suitable video stream available for this video', 422, cors);
     }

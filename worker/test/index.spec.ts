@@ -11,10 +11,15 @@ import worker from '../src/index';
 
 const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
-function makeRequest(path: string, method = 'GET', origin = 'http://localhost:5173') {
+let ipCounter = 10;
+
+function makeRequest(path: string, method = 'GET', origin = 'http://localhost:5173', ip?: string) {
   return new IncomingRequest(`http://yt-cut-worker.dev${path}`, {
     method,
-    headers: { Origin: origin },
+    headers: {
+      Origin: origin,
+      'CF-Connecting-IP': ip ?? `192.168.1.${ipCounter++}`,
+    },
   });
 }
 
@@ -29,28 +34,22 @@ async function fetchWorker(path: string, method = 'GET') {
 // ── Mock youtubei.js ──────────────────────────────────────────────────────────
 // We don't want real network calls in tests — mock the lib layer.
 
-vi.mock('../src/lib/youtube', () => ({
-  extractVideoId: vi.fn((input: string) => {
-    // Mirror real logic: parse URL and extract ?v= param
-    try {
-      const url = new URL(input);
-      if (url.hostname.includes('youtube.com')) return url.searchParams.get('v');
-      if (url.hostname === 'youtu.be') return url.pathname.slice(1) || null;
-    } catch {
-      if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
-    }
-    return null;
-  }),
-
-  getStreamInfo: vi.fn(async (videoId: string) => {
-    if (videoId === 'privateVid1') {
-      throw new Error('This video is private or unavailable');
-    }
-    if (videoId === 'noStream111') {
-      throw new Error('No suitable video stream found (≤1080p VP9/AV1)');
-    }
-    // Happy path
-    return {
+vi.mock('../src/lib/youtube', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/lib/youtube')>();
+  return {
+    ...actual,
+    getStreamInfo: vi.fn(async (videoId: string) => {
+      if (videoId === 'privateVid1') {
+        throw new Error('This video is private or unavailable');
+      }
+      if (videoId === 'noStream111') {
+        throw new Error('No suitable video stream found (≤1080p VP9/AV1)');
+      }
+      if (videoId === 'activeLive1') {
+        throw new Error('This stream is currently live. Live streams can be clipped after the broadcast finishes.');
+      }
+      // Happy path
+      return {
       videoId,
       title: 'Never Gonna Give You Up',
       author: 'Rick Astley',
@@ -78,7 +77,8 @@ vi.mock('../src/lib/youtube', () => ({
       },
     };
   }),
-}));
+  };
+});
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 
@@ -236,11 +236,39 @@ describe('GET /api/info — success', () => {
     );
     expect(res.headers.get('Content-Type')).toContain('application/json');
   });
+
+  it('resolves stream info for youtube.com/live/ID URLs', async () => {
+    const res = await fetchWorker(
+      '/api/info?url=https://www.youtube.com/live/lDw_cNwQS3A'
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json<{ ok: boolean; data: { videoId: string } }>();
+    expect(body.ok).toBe(true);
+    expect(body.data.videoId).toBe('lDw_cNwQS3A');
+  });
+
+  it('resolves stream info for youtube.com/shorts/ID URLs', async () => {
+    const res = await fetchWorker(
+      '/api/info?url=https://www.youtube.com/shorts/dQw4w9WgXcQ'
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json<{ ok: boolean; data: { videoId: string } }>();
+    expect(body.ok).toBe(true);
+    expect(body.data.videoId).toBe('dQw4w9WgXcQ');
+  });
 });
 
 // ── GET /api/info — YouTube error scenarios ───────────────────────────────────
 
 describe('GET /api/info — upstream errors', () => {
+  it('returns 422 for an active live stream with an informative message', async () => {
+    const res = await fetchWorker('/api/info?url=https://youtube.com/watch?v=activeLive1');
+    expect(res.status).toBe(422);
+    const body = await res.json<{ ok: boolean; error: string }>();
+    expect(body.ok).toBe(false);
+    expect(body.error).toContain('currently live');
+  });
+
   it('returns 403 for a private video', async () => {
     const res = await fetchWorker('/api/info?url=https://youtube.com/watch?v=privateVid1');
     expect(res.status).toBe(403);

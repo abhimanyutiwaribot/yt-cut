@@ -52,6 +52,13 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
 
   if (!details) throw new Error('Could not fetch video details');
 
+  if (details.is_live) {
+    throw new Error('This stream is currently live. Live streams can be clipped after the broadcast finishes.');
+  }
+  if (details.is_upcoming) {
+    throw new Error('This live stream has not started yet.');
+  }
+
   // ── Video streams (DASH, video-only) ──────────────────────────────
   // Filter to adaptive video streams up to 1080p.
   // Prioritize H.264 (avc1 / mp4) because it supports direct HTTP Range streaming without
@@ -189,22 +196,42 @@ export async function getStreamInfo(videoId: string): Promise<StreamInfo> {
 
 /** Extract a YouTube video ID from a URL or bare ID string */
 export function extractVideoId(input: string): string | null {
-  try {
-    const url = new URL(input);
-    // youtube.com/watch?v=ID
-    if (url.hostname.includes('youtube.com')) {
-      return url.searchParams.get('v');
-    }
-    // youtu.be/ID
-    if (url.hostname === 'youtu.be') {
-      return url.pathname.slice(1) || null;
-    }
-    // youtube.com/live/ID or /shorts/ID
-    const match = url.pathname.match(/\/(live|shorts|embed)\/([A-Za-z0-9_-]{11})/);
-    if (match) return match[2];
-  } catch {
-    // Not a URL — treat as bare video ID if it looks right
-    if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // 1. Check if input is a bare 11-character video ID
+  if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
   }
+
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.toLowerCase();
+
+    // Check youtube.com and related domains
+    if (host.includes('youtube.com') || host.includes('youtube-nocookie.com')) {
+      // Priority 1: ?v= query parameter (e.g. /watch?v=ID)
+      const v = url.searchParams.get('v');
+      if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) {
+        return v;
+      }
+      // Priority 2: path-based IDs (/live/ID, /shorts/ID, /embed/ID, /v/ID)
+      const match = url.pathname.match(/\/(live|shorts|embed|v)\/([A-Za-z0-9_-]{11})/);
+      if (match) {
+        return match[2];
+      }
+    }
+
+    // Check youtu.be short links (e.g. youtu.be/ID)
+    if (host === 'youtu.be' || host.endsWith('.youtu.be')) {
+      const id = url.pathname.slice(1).split('/')[0];
+      if (/^[A-Za-z0-9_-]{11}$/.test(id)) {
+        return id;
+      }
+    }
+  } catch {
+    // Input is not a valid URL
+  }
+
   return null;
 }
